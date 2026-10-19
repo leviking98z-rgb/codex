@@ -100,6 +100,7 @@ impl ChatWidget {
                 self.refresh_account_scoped_models();
             }
             self.backend_banner_notice_model = None;
+            self.gateway_served_model = None;
             self.automatic_model_switch_state =
                 backend_banners::AutomaticModelSwitchState::default();
             self.review.recent_auto_review_denials = RecentAutoReviewDenials::default();

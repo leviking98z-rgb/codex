@@ -728,7 +728,7 @@ impl ChatWidget {
     /// git metadata.
     pub(super) fn status_line_value(&mut self, item: StatusLineItem) -> Option<String> {
         match item {
-            StatusLineItem::ModelName => Some(self.model_display_name().to_string()),
+            StatusLineItem::ModelName => Some(self.gateway_model_display_name()),
             StatusLineItem::ModelWithReasoning => Some(self.model_with_reasoning_display_name()),
             StatusLineItem::Reasoning => Some(self.reasoning_display_name()),
             StatusLineItem::CurrentDir => {
@@ -1009,7 +1009,20 @@ impl ChatWidget {
             .filter(|_| self.has_chatgpt_account)
             .map(|tier| format!(" {tier}"))
             .unwrap_or_default();
-        format!("{} {label}{service_tier_label}", self.model_display_name())
+        format!(
+            "{} {label}{service_tier_label}",
+            self.gateway_model_display_name()
+        )
+    }
+
+    fn gateway_model_display_name(&self) -> String {
+        match self.gateway_served_model.as_deref() {
+            Some(model) => {
+                let short = model.rsplit('/').next().unwrap_or(model);
+                format!("{short} [via {}]", self.model_display_name())
+            }
+            None => self.model_display_name().to_string(),
+        }
     }
 
     /// Computes the compact runtime status label used by word-based status items.

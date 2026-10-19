@@ -162,6 +162,7 @@ pub struct ResponsesStreamEvent {
     pub(crate) kind: String,
     pub(crate) headers: Option<Value>,
     metadata: Option<Value>,
+    routing: Option<Value>,
     response: Option<Value>,
     error: Option<Value>,
     item: Option<Value>,
@@ -346,6 +347,30 @@ pub fn process_responses_event(
     event: ResponsesStreamEvent,
 ) -> std::result::Result<Option<ResponseEvent>, ResponsesEventError> {
     match event.kind.as_str() {
+        "response.magpie_routing" => {
+            if let Some(routing) = event.routing {
+                let model = |key: &str| {
+                    routing.get(key).and_then(Value::as_str).filter(|value| {
+                        !value.is_empty()
+                            && value.len() <= 256
+                            && value
+                                .bytes()
+                                .all(|c| c.is_ascii_alphanumeric() || b"/-_.:".contains(&c))
+                    })
+                };
+                if let (Some(from_model), Some(to_model), Some(fallback)) = (
+                    model("from_model"),
+                    model("to_model"),
+                    routing.get("fallback").and_then(Value::as_bool),
+                ) {
+                    return Ok(Some(ResponseEvent::GatewayRouting {
+                        from_model: from_model.to_owned(),
+                        to_model: to_model.to_owned(),
+                        fallback,
+                    }));
+                }
+            }
+        }
         "error" => {
             if let Some(error) = event.error.as_ref().and_then(parse_flex_unavailable) {
                 return Err(ResponsesEventError::Api(error));
@@ -1982,6 +2007,37 @@ mod tests {
             ev.response_model().as_deref(),
             Some(CYBER_RESTRICTED_MODEL_FOR_TESTS)
         );
+    }
+
+    #[tokio::test]
+    async fn magpie_routing_is_metadata_not_safety_or_assistant_output() {
+        let events = run_sse(vec![
+            json!({"type":"response.magpie_routing","routing":{
+                "from_model":"workbuddy/gpt-6-astra","to_model":"workbuddy/gpt-6.1-sol","fallback":true
+            }}),
+            json!({"type":"response.completed","response":{"id":"ok"}}),
+        ]).await;
+        assert_eq!(events.len(), 2);
+        assert_matches!(&events[0], ResponseEvent::GatewayRouting { from_model, to_model, fallback }
+            if from_model == "workbuddy/gpt-6-astra" && to_model == "workbuddy/gpt-6.1-sol" && *fallback);
+        assert_matches!(&events[1], ResponseEvent::Completed { .. });
+    }
+
+    #[test]
+    fn magpie_routing_ignores_invalid_metadata() {
+        for value in [
+            "",
+            "bad\nmodel",
+            "\u{1b}[31m",
+            "prompt text",
+            &"x".repeat(257),
+        ] {
+            let event = serde_json::from_value(json!({"type":"response.magpie_routing","routing":{
+                "from_model":"group/failover","to_model":value,"fallback":true
+            }}))
+            .unwrap();
+            assert!(matches!(process_responses_event(event), Ok(None)));
+        }
     }
 
     #[test]

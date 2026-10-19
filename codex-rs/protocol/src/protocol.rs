@@ -2224,6 +2224,10 @@ pub struct AuthRecoveryEvent {
 #[ts(rename_all = "snake_case")]
 pub enum ModelRerouteReason {
     HighRiskCyberActivity,
+    /// A gateway reports its selected member without changing the session model.
+    GatewaySelected,
+    /// A gateway moved to a different member after a failed attempt.
+    GatewayFailover,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq, JsonSchema, TS)]

@@ -1182,7 +1182,8 @@ impl ModelClient {
     }
 
     fn responses_headers(&self, auth: Option<&CodexAuth>, model: &str) -> ApiHeaderMap {
-        self.codex_responses_headers
+        let mut headers = self
+            .codex_responses_headers
             .as_ref()
             .filter(|config| {
                 config.model == model
@@ -1190,7 +1191,13 @@ impl ModelClient {
                     && self.state.provider.info().supports_codex_backend_routes()
             })
             .map(|config| config.headers.clone())
-            .unwrap_or_default()
+            .unwrap_or_default();
+        // Magpie can also be configured as the endpoint of the "openai"
+        // provider. Its group namespace still needs routing metadata.
+        if !self.state.provider.info().is_openai() || model.starts_with("group/") {
+            headers.insert("x-magpie-routing-notice", HeaderValue::from_static("v1"));
+        }
+        headers
     }
 
     fn uses_codex_backend(&self, auth: Option<&CodexAuth>) -> bool {

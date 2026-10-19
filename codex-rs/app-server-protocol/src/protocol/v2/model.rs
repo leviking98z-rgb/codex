@@ -16,7 +16,9 @@ use serde_json::Value as JsonValue;
 
 v2_enum_from_core!(
     pub enum ModelRerouteReason from CoreModelRerouteReason {
-        HighRiskCyberActivity
+        HighRiskCyberActivity,
+        GatewaySelected,
+        GatewayFailover
     }
 );
 

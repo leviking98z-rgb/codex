@@ -15784,7 +15784,9 @@
       },
       "ModelRerouteReason": {
         "enum": [
-          "highRiskCyberActivity"
+          "highRiskCyberActivity",
+          "gatewaySelected",
+          "gatewayFailover"
         ],
         "type": "string"
       },

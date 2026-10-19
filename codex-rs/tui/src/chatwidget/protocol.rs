@@ -87,6 +87,7 @@ impl ChatWidget {
                 self.on_thread_settings_updated(notification);
             }
             ServerNotification::TurnStarted(notification) => {
+                self.gateway_served_model = None;
                 if from_replay {
                     self.restore_realtime_transcripts_before_turn(&notification.turn.id);
                 } else {
@@ -229,7 +230,9 @@ impl ChatWidget {
             ServerNotification::SkillsChanged(_) => {
                 self.refresh_skills_for_current_cwd(/*force_reload*/ true);
             }
-            ServerNotification::ModelRerouted(_) => {}
+            ServerNotification::ModelRerouted(notification) => {
+                self.on_gateway_model_rerouted(notification);
+            }
             ServerNotification::ModelVerification(notification) => {
                 self.on_app_server_model_verification(&notification.verifications)
             }
@@ -676,5 +679,52 @@ impl ChatWidget {
                 replay_kind.map_or(ThreadItemRenderSource::Live, ThreadItemRenderSource::Replay),
             ),
         }
+    }
+}
+
+impl ChatWidget {
+    fn on_gateway_model_rerouted(
+        &mut self,
+        notification: codex_app_server_protocol::ModelReroutedNotification,
+    ) {
+        use codex_app_server_protocol::ModelRerouteReason;
+        if !matches!(
+            notification.reason,
+            ModelRerouteReason::GatewaySelected | ModelRerouteReason::GatewayFailover
+        ) {
+            return;
+        }
+        if self
+            .thread_id()
+            .is_some_and(|id| id.to_string() != notification.thread_id)
+            || self
+                .turn_lifecycle
+                .last_turn_id
+                .as_deref()
+                .is_some_and(|id| id != notification.turn_id)
+        {
+            return;
+        }
+        // Notices may replay on reconnect; don't duplicate them or touch model settings.
+        if self.gateway_served_model.as_deref() == Some(notification.to_model.as_str()) {
+            return;
+        }
+        let from = self
+            .gateway_served_model
+            .as_deref()
+            .unwrap_or(&notification.from_model);
+        if notification.reason == ModelRerouteReason::GatewayFailover
+            || self.gateway_served_model.is_some()
+        {
+            self.add_info_message(
+                format!(
+                    "Failover: {from} -> {}. Routing group unchanged.",
+                    notification.to_model
+                ),
+                None,
+            );
+        }
+        self.gateway_served_model = Some(notification.to_model);
+        self.refresh_status_line();
     }
 }

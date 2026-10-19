@@ -492,6 +492,23 @@ impl EventProcessorWithJsonOutput {
                 CodexStatus::Running
             }
             ServerNotification::ModelRerouted(notification) => {
+                use codex_app_server_protocol::ModelRerouteReason;
+                if matches!(
+                    notification.reason,
+                    ModelRerouteReason::GatewaySelected | ModelRerouteReason::GatewayFailover
+                ) {
+                    // Keep informational routing out of the JSON error/assistant stream.
+                    if notification.reason == ModelRerouteReason::GatewayFailover {
+                        eprintln!(
+                            "Failover: {} -> {}. Routing group unchanged.",
+                            notification.from_model, notification.to_model
+                        );
+                    }
+                    return CollectedThreadEvents {
+                        events,
+                        status: CodexStatus::Running,
+                    };
+                }
                 events.push(ThreadEvent::ItemCompleted(ItemCompletedEvent {
                     item: ExecThreadItem {
                         id: self.next_item_id(),

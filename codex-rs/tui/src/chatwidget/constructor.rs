@@ -172,6 +172,7 @@ impl ChatWidget {
             security_setup_dismissed: false,
             automatic_model_switch_state: backend_banners::AutomaticModelSwitchState::default(),
             backend_banner_notice_model: None,
+            gateway_served_model: None,
             luna_reserve_notice_account_id: None,
             warning_display_state: WarningDisplayState::default(),
             rendered_selection: Default::default(),

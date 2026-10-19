@@ -1407,6 +1407,7 @@ impl SessionTelemetry {
                 "reasoning_summary_part_added".into()
             }
             ResponseEvent::ServerModel(_) => "server_model".into(),
+            ResponseEvent::GatewayRouting { .. } => "gateway_routing".into(),
             ResponseEvent::ModelVerifications(_) => "model_verifications".into(),
             ResponseEvent::TurnModerationMetadata(_) => "turn_moderation_metadata".into(),
             ResponseEvent::SafetyBuffering(_) => "safety_buffering".into(),

@@ -586,6 +586,8 @@ pub(crate) struct ChatWidget {
     security_setup_dismissed: bool,
     automatic_model_switch_state: backend_banners::AutomaticModelSwitchState,
     backend_banner_notice_model: Option<String>,
+    // Presentation only: the selected routing group and future requests stay unchanged.
+    gateway_served_model: Option<String>,
     // Remember the account's Reserve entry notice across chats and transient banner refreshes.
     luna_reserve_notice_account_id: Option<String>,
     pub(crate) warning_display_state: WarningDisplayState,

@@ -89,6 +89,13 @@ pub enum ResponseEvent {
     /// Emitted when the server includes `OpenAI-Model` on the stream response.
     /// This can differ from the requested model when backend safety routing applies.
     ServerModel(String),
+    /// Display-only metadata from an opted-in routing gateway. Unlike
+    /// ServerModel, this is not a first-party safety-routing signal.
+    GatewayRouting {
+        from_model: String,
+        to_model: String,
+        fallback: bool,
+    },
     /// Emitted when the server recommends additional account verification.
     ModelVerifications(Vec<ModelVerification>),
     /// Emitted when the server includes moderation metadata for first-party turn presentation.

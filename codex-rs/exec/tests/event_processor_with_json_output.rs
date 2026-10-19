@@ -1782,3 +1782,25 @@ fn model_reroute_surfaces_as_error_item() {
         })
     );
 }
+
+#[test]
+fn gateway_routing_is_not_an_error_or_assistant_item() {
+    use codex_app_server_protocol::ModelRerouteReason;
+    for reason in [
+        ModelRerouteReason::GatewaySelected,
+        ModelRerouteReason::GatewayFailover,
+    ] {
+        let mut processor = EventProcessorWithJsonOutput::new(None);
+        let collected = processor.collect_thread_events(ServerNotification::ModelRerouted(
+            codex_app_server_protocol::ModelReroutedNotification {
+                thread_id: "thread-1".to_string(),
+                turn_id: "turn-1".to_string(),
+                from_model: "workbuddy/astra".to_string(),
+                to_model: "workbuddy/sol".to_string(),
+                reason,
+            },
+        ));
+        assert_eq!(collected.status, CodexStatus::Running);
+        assert!(collected.events.is_empty());
+    }
+}

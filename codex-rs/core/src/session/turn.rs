@@ -102,6 +102,8 @@ use codex_protocol::protocol::CodexErrorInfo;
 use codex_protocol::protocol::ErrorEvent;
 use codex_protocol::protocol::EventMsg;
 use codex_protocol::protocol::InternalSessionSource;
+use codex_protocol::protocol::ModelRerouteEvent;
+use codex_protocol::protocol::ModelRerouteReason;
 use codex_protocol::protocol::PlanDeltaEvent;
 use codex_protocol::protocol::ReasoningContentDeltaEvent;
 use codex_protocol::protocol::ReasoningRawContentDeltaEvent;
@@ -3010,6 +3012,25 @@ async fn try_run_sampling_request(
                     active_item = Some(turn_item);
                     active_item_is_streaming_to_client = stream_item_to_client;
                 }
+            }
+            ResponseEvent::GatewayRouting {
+                from_model,
+                to_model,
+                fallback,
+            } => {
+                sess.send_event(
+                    &turn_context,
+                    EventMsg::ModelReroute(ModelRerouteEvent {
+                        from_model,
+                        to_model,
+                        reason: if fallback {
+                            ModelRerouteReason::GatewayFailover
+                        } else {
+                            ModelRerouteReason::GatewaySelected
+                        },
+                    }),
+                )
+                .await;
             }
             ResponseEvent::ServerModel(server_model) => {
                 if !turn_context

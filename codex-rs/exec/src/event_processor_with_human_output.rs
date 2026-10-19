@@ -295,12 +295,20 @@ impl EventProcessor for EventProcessorWithHumanOutput {
                 CodexStatus::Running
             }
             ServerNotification::ModelRerouted(notification) => {
-                eprintln!(
-                    "{} {} -> {}",
-                    "model rerouted:".style(self.yellow).style(self.bold),
-                    notification.from_model,
-                    notification.to_model
-                );
+                use codex_app_server_protocol::ModelRerouteReason;
+                match notification.reason {
+                    ModelRerouteReason::GatewaySelected => {}
+                    ModelRerouteReason::GatewayFailover => eprintln!(
+                        "Failover: {} -> {}. Routing group unchanged.",
+                        notification.from_model, notification.to_model
+                    ),
+                    ModelRerouteReason::HighRiskCyberActivity => eprintln!(
+                        "{} {} -> {}",
+                        "model rerouted:".style(self.yellow).style(self.bold),
+                        notification.from_model,
+                        notification.to_model
+                    ),
+                }
                 CodexStatus::Running
             }
             ServerNotification::ModelVerification(_) => CodexStatus::Running,

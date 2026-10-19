@@ -2817,11 +2817,10 @@ class ModelProviderCapabilitiesReadResponse(BaseModel):
     web_search: Annotated[bool, Field(alias="webSearch")]
 
 
-class ModelRerouteReason(RootModel[Literal["highRiskCyberActivity"]]):
-    model_config = ConfigDict(
-        populate_by_name=True,
-    )
-    root: Literal["highRiskCyberActivity"]
+class ModelRerouteReason(Enum):
+    high_risk_cyber_activity = "highRiskCyberActivity"
+    gateway_selected = "gatewaySelected"
+    gateway_failover = "gatewayFailover"
 
 
 class ModelReroutedNotification(BaseModel):

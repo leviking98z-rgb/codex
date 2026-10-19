@@ -13,6 +13,52 @@ use ratatui::backend::TestBackend;
 use serial_test::serial;
 
 #[tokio::test]
+async fn gateway_routing_changes_display_not_selected_model() {
+    use codex_app_server_protocol::ModelRerouteReason;
+    use codex_app_server_protocol::ModelReroutedNotification;
+    let (mut chat, mut rx, _ops) = make_chatwidget_manual(Some("group/wb-failover")).await;
+    let selected = chat.current_model().to_string();
+    let thread_id = ThreadId::new();
+    chat.thread_id = Some(thread_id);
+    chat.turn_lifecycle.last_turn_id = Some("turn-1".to_string());
+    let notification = ModelReroutedNotification {
+        thread_id: thread_id.to_string(),
+        turn_id: "turn-1".to_string(),
+        from_model: "workbuddy/gpt-6-astra".to_string(),
+        to_model: "workbuddy/gpt-6.1-sol".to_string(),
+        reason: ModelRerouteReason::GatewayFailover,
+    };
+    drain_insert_history(&mut rx);
+    chat.handle_server_notification(
+        ServerNotification::ModelRerouted(notification.clone()),
+        None,
+    );
+    assert_eq!(chat.current_model(), selected);
+    let shown = chat
+        .status_line_value_for_item(crate::bottom_pane::StatusLineItem::ModelName)
+        .unwrap();
+    assert!(shown.starts_with("gpt-6.1-sol [via "));
+    let history = drain_insert_history(&mut rx);
+    assert_eq!(history.len(), 1);
+    assert!(lines_to_single_string(&history[0]).contains("Failover:"));
+    chat.handle_server_notification(
+        ServerNotification::ModelRerouted(notification.clone()),
+        None,
+    );
+    assert!(drain_insert_history(&mut rx).is_empty());
+    let mut stale = notification;
+    stale.turn_id = "old-turn".to_string();
+    stale.to_model = "workbuddy/other".to_string();
+    chat.handle_server_notification(ServerNotification::ModelRerouted(stale), None);
+    assert_eq!(
+        chat.gateway_served_model.as_deref(),
+        Some("workbuddy/gpt-6.1-sol")
+    );
+    chat.set_model("direct-model");
+    assert!(chat.gateway_served_model.is_none());
+}
+
+#[tokio::test]
 async fn finalized_voice_transcript_renders_beside_the_streamed_cell() {
     let (mut chat, _rx, _ops) = make_chatwidget_manual(/*model_override*/ None).await;
     chat.local_settings.tui.animations = false;
