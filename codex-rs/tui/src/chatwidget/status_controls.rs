@@ -243,6 +243,7 @@ impl ChatWidget {
             .collect();
         let agents_summary =
             crate::status::compose_agents_summary(&self.config, &self.instruction_source_paths);
+        let thread_name = self.display_thread_name();
         let (cell, handle) = crate::status::new_status_output_with_rate_limits_handle(
             &self.config,
             self.requires_openai_auth,
@@ -253,7 +254,7 @@ impl ChatWidget {
             token_info,
             total_usage,
             &self.thread_id,
-            self.thread_name.clone(),
+            thread_name.clone(),
             self.forked_from,
             rate_limit_snapshots.as_slice(),
             self.plan_type,
@@ -284,7 +285,7 @@ impl ChatWidget {
                 Arc::from(self.config.cwd.display().to_string()),
             ),
         ];
-        if let Some(name) = self.thread_name.as_deref().filter(|name| !name.is_empty()) {
+        if let Some(name) = thread_name.as_deref().filter(|name| !name.is_empty()) {
             copy_targets.push(("Thread name".to_string(), Arc::from(name)));
         }
         if let Some(thread_id) = self.thread_id {

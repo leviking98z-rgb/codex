@@ -300,6 +300,7 @@ pub(crate) use misalignment_policy::MisalignmentReview;
 pub(crate) use misalignment_policy::MisalignmentTurnSource;
 mod pets;
 pub(crate) use self::pets::ConfiguredPetLoadGeneration;
+mod session_alias;
 mod session_flow;
 mod session_header;
 use self::session_header::SessionHeader;
@@ -482,6 +483,8 @@ pub(crate) struct ChatWidgetInit {
     /// Tests that do not exercise git status-line refreshes may leave this unset. Production TUI
     /// construction provides a runner for the active app-server session.
     pub(crate) workspace_command_runner: Option<WorkspaceCommandRunner>,
+    /// Optional native control-host CLI; tests can inject a command or disable lookups.
+    pub(crate) session_alias_command: Option<PathBuf>,
     pub(crate) initial_user_message: Option<UserMessage>,
     pub(crate) enhanced_keys_supported: bool,
     pub(crate) has_chatgpt_account: bool,
@@ -557,6 +560,7 @@ pub(crate) struct ChatWidget {
     model_popup_model_ids: Vec<String>,
     session_telemetry: SessionTelemetry,
     session_header: SessionHeader,
+    pub(crate) session_alias: crate::session_alias::SessionAlias,
     pub(crate) initial_user_message: Option<UserMessage>,
     status_account_display: Option<StatusAccountDisplay>,
     pub(crate) remote_connection: Option<RemoteConnectionStatus>,

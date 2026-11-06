@@ -641,6 +641,7 @@ async fn configured_pet_load_is_deferred_until_after_construction() {
         frame_requester: FrameRequester::test_dummy(),
         app_event_tx: tx,
         workspace_command_runner: None,
+        session_alias_command: None,
         initial_user_message: None,
         enhanced_keys_supported: false,
         has_chatgpt_account: false,

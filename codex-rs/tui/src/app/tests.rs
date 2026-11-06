@@ -884,6 +884,7 @@ fn set_test_initial_prompt(app: &mut App, initial_prompt: String) {
         frame_requester: crate::tui::FrameRequester::test_dummy(),
         app_event_tx: app.app_event_tx.clone(),
         workspace_command_runner: None,
+        session_alias_command: None,
         initial_user_message: create_initial_user_message(
             Some(initial_prompt),
             Vec::new(),
@@ -9391,6 +9392,7 @@ async fn replace_chat_widget_reseeds_collab_agent_metadata_for_replay() {
         frame_requester: crate::tui::FrameRequester::test_dummy(),
         app_event_tx: app.app_event_tx.clone(),
         workspace_command_runner: None,
+        session_alias_command: None,
         initial_user_message: None,
         enhanced_keys_supported: app.enhanced_keys_supported,
         has_chatgpt_account: app.chat_widget.has_chatgpt_account(),

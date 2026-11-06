@@ -63,6 +63,7 @@ impl App {
                     | AppEvent::OpenWarnings
                     | AppEvent::StatusLineSetup { .. }
                     | AppEvent::StatusLineSetupCancelled
+                    | AppEvent::SessionAliasUpdated { .. }
                     | AppEvent::TerminalTitleSetup { .. }
                     | AppEvent::TerminalTitleSetupPreview { .. }
                     | AppEvent::TerminalTitleSetupCancelled
@@ -209,6 +210,9 @@ impl App {
             }
             AppEvent::PluginMentionsLoaded { ref cwd, .. }
                 if cwds_differ(cwd, self.config.cwd.as_path()) => {}
+            AppEvent::SessionAliasUpdated { thread_id } => {
+                self.chat_widget.on_session_alias_updated(thread_id);
+            }
             AppEvent::NewSession { name } => {
                 self.start_fresh_session(
                     tui, app_server, /*session_start_source*/ None,

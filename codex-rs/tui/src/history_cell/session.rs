@@ -3,6 +3,7 @@
 use super::*;
 use crate::line_truncation::line_width;
 use crate::line_truncation::truncate_line_with_ellipsis_if_overflow;
+use crate::session_alias::SessionAliasName;
 use crate::style::accent_color;
 use crate::width::display_width;
 
@@ -120,6 +121,20 @@ impl HistoryCell for ForkedThreadHistoryCell {
 #[derive(Debug)]
 pub struct SessionInfoCell(CompositeHistoryCell);
 
+impl SessionInfoCell {
+    pub(crate) fn with_session_alias(mut self, session_alias: SessionAliasName) -> Self {
+        if let Some(header) = self
+            .0
+            .parts
+            .iter_mut()
+            .find_map(|part| part.as_any_mut().downcast_mut::<SessionHeaderHistoryCell>())
+        {
+            header.session_alias = session_alias;
+        }
+        self
+    }
+}
+
 /// Fullscreen transcript presentation omits tips; scrollback retains the original cells.
 pub(crate) fn fullscreen_session_lines(
     cell: &dyn HistoryCell,
@@ -150,6 +165,13 @@ pub(crate) fn fullscreen_session_lines(
 }
 
 impl HistoryCell for SessionInfoCell {
+    fn transcript_animation_tick(&self) -> Option<u64> {
+        self.0
+            .parts
+            .iter()
+            .find_map(|part| part.transcript_animation_tick())
+    }
+
     fn compact_hyperlink_lines(&self, width: u16) -> Vec<HyperlinkLine> {
         self.0.compact_hyperlink_lines(width)
     }
@@ -296,6 +318,10 @@ pub(crate) fn has_yolo_permissions(
 pub(crate) struct ClearScreenHeader(pub(crate) SessionHeaderHistoryCell);
 
 impl HistoryCell for ClearScreenHeader {
+    fn transcript_animation_tick(&self) -> Option<u64> {
+        self.0.transcript_animation_tick()
+    }
+
     fn display_lines(&self, width: u16) -> Vec<Line<'static>> {
         self.0.display_lines(width)
     }
@@ -321,6 +347,7 @@ pub(crate) struct SessionHeaderHistoryCell {
     reasoning_effort: Option<ReasoningEffortConfig>,
     directory: PathBuf,
     yolo_mode: bool,
+    session_alias: SessionAliasName,
 }
 
 impl SessionHeaderHistoryCell {
@@ -336,11 +363,17 @@ impl SessionHeaderHistoryCell {
             reasoning_effort,
             directory,
             yolo_mode: false,
+            session_alias: SessionAliasName::default(),
         }
     }
 
     pub(crate) fn with_yolo_mode(mut self, yolo_mode: bool) -> Self {
         self.yolo_mode = yolo_mode;
+        self
+    }
+
+    pub(crate) fn with_session_alias(mut self, session_alias: SessionAliasName) -> Self {
+        self.session_alias = session_alias;
         self
     }
 
@@ -379,10 +412,23 @@ impl SessionHeaderHistoryCell {
 }
 
 impl HistoryCell for SessionHeaderHistoryCell {
+    fn transcript_animation_tick(&self) -> Option<u64> {
+        // Reuse the transcript's revision key without invalidating layouts on every frame.
+        self.session_alias.revision()
+    }
+
     fn display_lines(&self, width: u16) -> Vec<Line<'static>> {
         let width = usize::from(width);
         let mut title = vec!["  ".into()];
-        title.extend(codex_title(self.version));
+        if let Some(name) = self.session_alias.get() {
+            title.extend([
+                ">_ ".fg(accent_color()),
+                name.bold(),
+                format!(" (v{})", self.version).dim(),
+            ]);
+        } else {
+            title.extend(codex_title(self.version));
+        }
         let mut lines = vec![
             Line::default(),
             Line::from(title),
@@ -406,7 +452,13 @@ impl HistoryCell for SessionHeaderHistoryCell {
 
     fn raw_lines(&self) -> Vec<Line<'static>> {
         let mut lines = vec![
-            Line::from(format!("OpenAI Codex (v{})", self.version)),
+            Line::from(format!(
+                "{} (v{})",
+                self.session_alias
+                    .get()
+                    .unwrap_or_else(|| "OpenAI Codex".to_string()),
+                self.version,
+            )),
             Line::from(format!(
                 "model: {}{}",
                 self.model,

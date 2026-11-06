@@ -237,6 +237,7 @@ pub(super) async fn make_chatwidget_manual_with_auth(
         frame_requester,
         app_event_tx,
         workspace_command_runner: None,
+        session_alias_command: None,
         initial_user_message: None,
         enhanced_keys_supported: false,
         has_chatgpt_account,

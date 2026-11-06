@@ -1,0 +1,9 @@
+---
+source: tui/src/chatwidget/tests/session_alias_tests.rs
+expression: normalized_backend_snapshot(terminal.backend())
+---
+"                                                                                "
+"                                                                                "
+"› Ask Codex to do anything                                                      "
+"                                                                                "
+"  gpt-5.2 default · mail-agent                                                  "

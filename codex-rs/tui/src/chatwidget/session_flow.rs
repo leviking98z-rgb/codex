@@ -93,6 +93,8 @@ impl ChatWidget {
         let connector_scope_changed = previous_thread_id != Some(session.thread_id)
             || self.config.cwd.as_path() != session.cwd.as_path();
         self.thread_id = Some(session.thread_id);
+        self.session_alias
+            .set_thread(session.thread_id, self.app_event_tx.clone());
         self.daybreak_enabled = self.config.features.enabled(Feature::CliDaybreak)
             && session.daybreak_enabled
             && !matches!(display, SessionConfiguredDisplay::SideConversation);
@@ -241,7 +243,8 @@ impl ChatWidget {
                 self.show_welcome_banner,
                 startup_tooltip_override,
                 self.plan_type,
-            );
+            )
+            .with_session_alias(self.session_alias.reader());
             self.apply_session_info_cell(session_info_cell);
         } else if self
             .transcript

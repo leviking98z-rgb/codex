@@ -1,0 +1,19 @@
+---
+source: tui/src/session_alias_tests.rs
+expression: "rendered.join(\"\\n---\\n\")"
+---
+
+  >_ OpenAI Codex (vtest)
+     project
+---
+
+  >_ mail-agent (vtest)
+     project
+---
+
+  >_ renamed-agent (vtest)
+     project
+---
+
+  >_ OpenAI Codex (vtest)
+     project

@@ -203,6 +203,7 @@ mod resume_permissions;
 mod resume_picker;
 mod screen_reader;
 mod service_tier_resolution;
+mod session_alias;
 mod session_archive_commands;
 mod session_log;
 mod session_queue_commands;
