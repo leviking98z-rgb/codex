@@ -492,6 +492,7 @@ impl ChatWidget {
                     .map(ToString::to_string)
                     .collect();
                 if self.session_alias.name().is_some() {
+                    items.retain(|item| item != "thread-name");
                     items.insert(0, "thread-name".to_string());
                 }
                 items

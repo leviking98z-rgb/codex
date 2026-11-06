@@ -73,15 +73,26 @@ async fn the_default_footer_shows_the_alias_without_overriding_custom_selections
         .update(Some("mail-agent".to_string()));
     chat.local_settings.tui.status_line = None;
     assert_eq!(
-        chat.configured_status_line_items()
-            .first()
-            .map(String::as_str),
-        Some("thread-name")
+        chat.configured_status_line_items(),
+        vec![
+            "thread-name".to_string(),
+            "model-with-reasoning".to_string(),
+            "current-dir".to_string(),
+        ]
     );
     chat.local_settings.tui.status_line = Some(vec!["model-name".to_string()]);
     assert_eq!(
         chat.configured_status_line_items(),
         vec!["model-name".to_string()]
+    );
+    chat.local_settings.tui.status_line = Some(vec![]);
+    assert!(chat.configured_status_line_items().is_empty());
+
+    chat.session_alias.reader().update(None);
+    chat.local_settings.tui.status_line = None;
+    assert_eq!(
+        chat.configured_status_line_items(),
+        DEFAULT_STATUS_LINE_ITEMS.map(ToString::to_string).to_vec()
     );
 }
 
